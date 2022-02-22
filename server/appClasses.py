@@ -16,7 +16,7 @@ bw = BandWidth()
 loss = Loss()
 jitter = Jitter(48000, 90000)
 count = 0
-
+type = "audio"
 
 def capture_live_packets(network_interface):
     capture = pyshark.LiveCapture(interface=network_interface, bpf_filter="udp and (port 3479 or port 3480)", decode_as={
@@ -42,16 +42,34 @@ def capture_live_packets(network_interface):
 @app.route("/api/metrics", methods=["GET"])
 def helloWorld():
     global count
+    global type
     obj = {}
-    obj["loss"] = loss.audio
-    obj["bw"] = bw.video
-    obj["jitter"] = jitter.audio
+    if type == "audio":
+        obj["loss"] = loss.audio
+        obj["bw"] = bw.audio
+        obj["jitter"] = jitter.audio
+    elif type == "video":
+        obj["loss"] = loss.video
+        obj["bw"] = bw.video
+        obj["jitter"] = jitter.video
     obj["count"] = count
     count += 1
     print(obj)
     if loss.missed["audio"] != 0:
         print("LOSS :", loss.missed["audio"])
     return obj, 200
+# def helloWorld():
+#     global count
+#     obj = {}
+#     obj["loss"] = loss.video
+#     obj["bw"] = bw.video
+#     obj["jitter"] = jitter.video
+#     obj["count"] = count
+#     count += 1
+#     print(obj)
+#     if loss.missed["video"] != 0:
+#         print("LOSS :", loss.missed["video"])
+#     return obj, 200
 
 
 if __name__ == '__main__':
