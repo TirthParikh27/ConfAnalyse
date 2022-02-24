@@ -30,7 +30,7 @@ class Loss:
         if hasattr(pkt, "rtp"):
             if hasattr(pkt.rtp, "seq"):
                 # print(pkt.rtp.seq)
-                hasattr(pkt.rtp , "ssrc") and pkt.rtp.ssrc == audio_ssrc :
+                if hasattr(pkt.rtp , "ssrc") and pkt.rtp.ssrc == audio_ssrc :
                     self.count["audio"] += 1
                     if self.seqNumber["audio"] != 0:
                         self.gap = int(pkt.rtp.seq) - self.seqNumber["audio"]
