@@ -15,15 +15,35 @@ CORS(app)
 bw = BandWidth()
 loss = Loss()
 jitter = Jitter(48000, 90000)
+p_type = {"audio" : 108 , "video" : 122}
 count = 0
-type = "audio"
+ssrc = {"audio" : "" , "video" : ""}
+type = "video"
+capture_start_time = 0.0
+
+def getSsrc(capture):
+    global ssrc
+    global p_type
+    print(ssrc)
+    for pkt in capture.sniff_continuously():
+        if hasattr(pkt , "rtp") and hasattr(pkt.rtp , "p_type") and int(pkt.rtp.p_type) == p_type["audio"] and hasattr(pkt.rtp , "ssrc"):
+          ssrc["audio"] = pkt.rtp.ssrc
+          print(pkt.rtp.ssrc)
+          break
 
 def capture_live_packets(network_interface):
     capture = pyshark.LiveCapture(interface=network_interface, bpf_filter="udp and (port 3479 or port 3480)", decode_as={
                                   'udp.port==3479': 'rtp', 'udp.port==3480': 'rtp'})
+    global ssrc
+    global capture_start_time
+    getSsrc(capture)
     for pkt in capture.sniff_continuously():
-        loss.calcLoss(pkt)
-        bw.calculateBW(pkt)
+        if float(pkt.frame_info.time_epoch) - capture_start_time >= 1:
+            bw.updateCounters()
+            loss.updateCounters()
+            capture_start_time = float(pkt.frame_info.time_epoch)
+        loss.calcLoss(pkt , ssrc["audio"])
+        bw.calculateBW(pkt , ssrc["audio"])
         jitter.calculateJitter(pkt)
 
 # def runCapture():
@@ -74,7 +94,7 @@ def helloWorld():
 
 if __name__ == '__main__':
     capture = threading.Thread(
-        target=capture_live_packets, args=("WiFi",), daemon=True)
+        target=capture_live_packets, args=("Ethernet",), daemon=True)
     capture.start()
     # calculate = threading.Thread(target=runCapture, daemon=True)
     # calculate.start()

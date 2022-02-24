@@ -3,7 +3,7 @@ count = 0
 seqNumber = 0
 gap = 1
 metrics = {"video": {"loss": 0, "jitter": 0, "bw": 0, "delay": 0},
-           "audio": {"loss": 0, "jitter": 0, "bw": 0, "delay": 0}}
+           "audio": {"loss": 0, "jitter": 0, "bw": 0, "delay": 0 }}
 
 
 class Loss:
@@ -16,55 +16,43 @@ class Loss:
         self.missed = {"audio":  0, "video": 0}
         self.timePassed = {"audio" : 0 , "video" : 0}
 
-    def calcLoss(self, pkt):
+    def updateCounters(self):
+        # AUDIO
+        self.missed["audio"] = 0
+        self.count["audio"] = 1
+        self.audio = 0
+        # VIDEO
+        self.missed["video"] = 0
+        self.count["video"] = 1
+        self.video = 0
+
+    def calcLoss(self, pkt , audio_ssrc):
         if hasattr(pkt, "rtp"):
             if hasattr(pkt.rtp, "seq"):
                 # print(pkt.rtp.seq)
-                if(int(pkt.udp.srcport) == 3479):
-                    if self.count["audio"] == 0:
-                        self.timePassed["audio"] = float(pkt.frame_info.time_epoch)
-                        self.count["audio"] += 1
-                    else : 
-                        if float(pkt.frame_info.time_epoch) - self.timePassed["audio"] >= 1:
-                            self.timePassed["audio"]  = float(pkt.frame_info.time_epoch)
-                            self.missed["audio"] = 0
-                            self.count["audio"] = 1
-                            self.audio = 0
-                            self.seqNumber["audio"] = int(pkt.rtp.seq)
-                        else:
-                            self.count["audio"] += 1
-                            if self.seqNumber["audio"] != 0:
-                                self.gap = int(pkt.rtp.seq) - self.seqNumber["audio"]
-                            if self.gap > 1:
-                                self.missed["audio"] += self.gap-1
-                            else:
-                                self.seqNumber["audio"] = int(pkt.rtp.seq)
-                            self.seqNumber["audio"] = int(pkt.rtp.seq)
-                            self.audio = round(
-                                (self.missed["audio"]/(self.count["audio"]+self.missed["audio"])), 4) * 100
+                if(int(pkt.udp.srcport) == 3479) or (hasattr(pkt.rtp , "ssrc") and pkt.rtp.ssrc == audio_ssrc):
+                    self.count["audio"] += 1
+                    if self.seqNumber["audio"] != 0:
+                        self.gap = int(pkt.rtp.seq) - self.seqNumber["audio"]
+                    if self.gap > 1:
+                        self.missed["audio"] += self.gap-1
+
+                    self.seqNumber["audio"] = int(pkt.rtp.seq)
+                    self.audio = round(
+                        (self.missed["audio"]/(self.count["audio"]+self.missed["audio"])), 4) * 100
                 
-                elif(int(pkt.udp.srcport) == 3480):
-                    if self.count["video"] == 0:
-                        self.timePassed["video"] = float(pkt.frame_info.time_epoch)
-                        self.count["video"] += 1
-                    else : 
-                        if float(pkt.frame_info.time_epoch) - self.timePassed["video"] >= 1:
-                            self.timePassed["video"]  = float(pkt.frame_info.time_epoch)
-                            self.missed["video"] = 0
-                            self.count["video"] = 1
-                            self.video = 0
-                            self.seqNumber["video"] = int(pkt.rtp.seq)
-                        else:
-                            self.count["video"] += 1
-                            if self.seqNumber["video"] != 0:
-                                self.gap = int(pkt.rtp.seq) - self.seqNumber["video"]
-                            if self.gap > 1:
-                                self.missed["video"] += self.gap-1
-                            else:
-                                self.seqNumber["video"] = int(pkt.rtp.seq)
-                            self.seqNumber["video"] = int(pkt.rtp.seq)
-                            self.video = round(
-                                (self.missed["video"]/(self.count["video"]+self.missed["video"])), 4) * 100
+                elif int(pkt.udp.srcport) == 3480 and hasattr(pkt.rtp , "ssrc") and pkt.rtp.ssrc != audio_ssrc:
+                   
+                    self.count["video"] += 1
+                    if self.seqNumber["video"] != 0:
+                        self.gap = int(pkt.rtp.seq) - self.seqNumber["video"]
+                    if self.gap > 1:
+                        self.missed["video"] += self.gap-1
+                    else:
+                        self.seqNumber["video"] = int(pkt.rtp.seq)
+                    self.seqNumber["video"] = int(pkt.rtp.seq)
+                    self.video = round(
+                        (self.missed["video"]/(self.count["video"]+self.missed["video"])), 4) * 100
 
 class Jitter:
     def __init__(self, audioClock, videoClock):
@@ -130,33 +118,27 @@ class BandWidth:
     self.sec_count = {"audio" : 0 , "video" : 0}
     self.count = {"audio" : 0 , "video" : 0}
     self.data = {"audio" : 0 , "video" : 0}
-  def calculateBW(self , pkt):
+
+  def updateCounters(self):
+      #AUDIO
+    self.sec_count["audio"] += 1
+    self.seconds["audio"].append(self.sec_count["audio"])
+    self.audio = round(self.data["audio"]/125,2)
+    print(self.audio)
+    self.data["audio"] = 0
+    # VIDEO
+    self.sec_count["video"] += 1
+    self.seconds["video"].append(self.sec_count["video"])
+    self.video = round(self.data["video"]/125,2)
+    self.data["video"] = 0
+
+  def calculateBW(self , pkt , audio_ssrc):
     if hasattr(pkt, "rtp"):
-      if int(pkt.udp.srcport)==3479:
-        if self.count["audio"] == 0:
-          self.start_sec["audio"] = float(pkt.frame_info.time_epoch)
-        else : 
-          if float(pkt.frame_info.time_epoch) - self.start_sec["audio"] >= 1:
-            self.start_sec["audio"] = float(pkt.frame_info.time_epoch)
-            self.sec_count["audio"] += 1
-            self.seconds["audio"].append(self.sec_count["audio"])
-            self.audio = round(self.data["audio"]/125,2)
-            print(self.audio)
-            self.data["audio"] = 0
-          else :
-            self.data["audio"] += float(pkt.frame_info.len)
+
+      if int(pkt.udp.srcport) == 3479 or (hasattr(pkt.rtp , "ssrc") and pkt.rtp.ssrc == audio_ssrc):
+        self.data["audio"] += float(pkt.frame_info.len)
         self.count["audio"] += 1
-      elif int(pkt.udp.srcport) == 3480:
-        if self.count["video"] == 0:
-          self.start_sec["video"] = float(pkt.frame_info.time_epoch)
-        else : 
-          if float(pkt.frame_info.time_epoch) - self.start_sec["video"] >= 1:
-            self.start_sec["video"] = float(pkt.frame_info.time_epoch)
-            self.sec_count["video"] += 1
-            self.seconds["video"].append(self.sec_count["video"])
-            self.video = round(self.data["video"]/125,2)
-            self.data["video"] = 0
-          else :
-            self.data["video"] += float(pkt.frame_info.len)
+      elif int(pkt.udp.srcport) == 3480 and hasattr(pkt.rtp , "ssrc") and pkt.rtp.ssrc != audio_ssrc:
+        self.data["video"] += float(pkt.frame_info.len)
         self.count["video"] += 1
 
