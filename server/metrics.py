@@ -135,7 +135,7 @@ class BandWidth:
   def calculateBW(self , pkt , audio_ssrc):
     if hasattr(pkt, "rtp"):
 
-      if int(pkt.udp.srcport) == 3479 or (hasattr(pkt.rtp , "ssrc") and pkt.rtp.ssrc == audio_ssrc):
+      if hasattr(pkt.rtp , "ssrc") and pkt.rtp.ssrc == audio_ssrc :
         self.data["audio"] += float(pkt.frame_info.len)
         self.count["audio"] += 1
       elif int(pkt.udp.srcport) == 3480 and hasattr(pkt.rtp , "ssrc") and pkt.rtp.ssrc != audio_ssrc:
