@@ -18,7 +18,7 @@ jitter = Jitter(48000, 90000)
 p_type = {"audio" : 108 , "video" : 122}
 count = 0
 ssrc = {"audio" : "" , "video" : ""}
-type = "video"
+type = "audio"
 capture_start_time = 0.0
 
 def getSsrc(capture):
