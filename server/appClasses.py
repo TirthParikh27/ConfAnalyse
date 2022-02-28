@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO, send
-from metrics import BandWidth, Loss, Jitter
+from metrics import BandWidth, Loss, Jitter , VideoLoss
 
 
 app = Flask(__name__)
@@ -14,6 +14,7 @@ CORS(app)
 
 bw = BandWidth()
 loss = Loss()
+videoLoss = VideoLoss()
 jitter = Jitter(48000, 90000)
 p_type = {"audio" : 108 , "video" : 122}
 count = 0
@@ -41,9 +42,11 @@ def capture_live_packets(network_interface):
         if float(pkt.frame_info.time_epoch) - capture_start_time >= 1:
             bw.updateCounters()
             loss.updateCounters()
+            videoLoss.updateCounters()
             capture_start_time = float(pkt.frame_info.time_epoch)
         loss.calcLoss(pkt , ssrc["audio"])
         bw.calculateBW(pkt , ssrc["audio"])
+        videoLoss.calcLoss(pkt,  ssrc["audio"])
         jitter.calculateJitter(pkt)
 
 # def runCapture():
@@ -68,10 +71,12 @@ def helloWorld():
         obj["loss"] = loss.audio
         obj["bw"] = bw.audio
         obj["jitter"] = jitter.audio
+        obj["pktRate"] = loss.pktRate
     elif type == "video":
-        obj["loss"] = loss.video
+        obj["loss"] = videoLoss.loss
         obj["bw"] = bw.video
         obj["jitter"] = jitter.video
+        obj["pktRate"] = videoLoss.pktRate
     obj["count"] = count
     count += 1
     print(obj)
@@ -94,7 +99,7 @@ def helloWorld():
 
 if __name__ == '__main__':
     capture = threading.Thread(
-        target=capture_live_packets, args=("Ethernet",), daemon=True)
+        target=capture_live_packets, args=("Wifi",), daemon=True)
     capture.start()
     # calculate = threading.Thread(target=runCapture, daemon=True)
     # calculate.start()

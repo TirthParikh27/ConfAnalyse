@@ -46,6 +46,13 @@ function AudioCharts() {
             title="Throughput (Kbps)"
           />
         </Grid>
+        <Grid item xs={12}>
+          <NetworkPlot
+            data={data.slice(-100)}
+            dataKey="pktRate"
+            title="Packets per second"
+          />
+        </Grid>
       </Grid>
     </div>
   );
