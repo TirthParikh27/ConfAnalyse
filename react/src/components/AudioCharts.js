@@ -42,6 +42,20 @@ function AudioCharts() {
         <Grid item xs={12}>
           <NetworkPlot
             data={data.slice(-100)}
+            dataKey="newJitter"
+            title="Packet Inter-Arrival Jitter"
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <NetworkPlot
+            data={data.slice(-100)}
+            dataKey="delay"
+            title="Receiving Delay"
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <NetworkPlot
+            data={data.slice(-100)}
             dataKey="bw"
             title="Throughput (Kbps)"
           />

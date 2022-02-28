@@ -1,3 +1,6 @@
+from re import L
+import numpy as np
+
 missed = 0
 count = 0
 seqNumber = 0
@@ -17,7 +20,13 @@ class VideoLoss:
         self.gap = 0
 
     def updateCounters(self):
-        self.loss = 1 - (self.receivedPackets/self.totalPackets)
+        if self.totalPackets != 0:
+            self.loss = 1 - (self.receivedPackets/self.totalPackets)
+            print("video packet loss = " , self.loss)
+            print("Received packets = " , self.receivedPackets)
+            print("Total packets = " , self.totalPackets)
+        else:
+            print("NO PACKETS !!!!")
         self.pktRate = self.receivedPackets
         self.receivedPackets = 0
         self.totalPackets = 0
@@ -87,6 +96,50 @@ class Loss:
                     self.seqNumber["video"] = int(pkt.rtp.seq)
                     self.video = round(
                         (self.missed["video"]/(self.count["video"]+self.missed["video"])), 4) * 100
+
+class InterArrivalJitterAudio:
+    def __init__(self):
+        self.deltas = []
+        self.prevTimestamp = 0.0
+        self.jitter =  0.0   
+        self.count = 0
+
+    def updateCounters(self):
+        if len(self.deltas) != 0:
+            self.jitter = np.std(self.deltas, dtype = np.float64)
+        self.deltas.clear()
+
+    def calculateJitter(self , pkt , audio_ssrc):
+        if hasattr(pkt , "rtp") and hasattr(pkt.rtp , "ssrc") and pkt.rtp.ssrc == audio_ssrc:
+           
+            if self.count == 0:
+                self.count += 1
+                self.prevTimestamp = float(pkt.frame_info.time_epoch)
+            else:
+                self.deltas.append(float(pkt.frame_info.time_epoch) - self.prevTimestamp)
+                self.prevTimestamp = float(pkt.frame_info.time_epoch)
+
+class DelayAudio:
+    def __init__(self):
+        self.deltas = []
+        self.prevTimestamp = 0.0
+        self.delay =  0.0   
+        self.count = 0
+
+    def updateCounters(self):
+        if len(self.deltas) != 0:
+            self.delay = np.average(self.deltas)
+        self.deltas.clear()
+
+    def calculateJitter(self , pkt , audio_ssrc):
+        if hasattr(pkt , "rtp") and hasattr(pkt.rtp , "ssrc") and pkt.rtp.ssrc == audio_ssrc:
+           
+            if self.count == 0:
+                self.count += 1
+                self.prevTimestamp = float(pkt.frame_info.time_epoch)
+            else:
+                self.deltas.append(float(pkt.frame_info.time_epoch) - self.prevTimestamp)
+                self.prevTimestamp = float(pkt.frame_info.time_epoch)
 
 
 class Jitter:

@@ -1,3 +1,4 @@
+from email.mime import audio
 import pyshark
 import time
 import threading
@@ -6,7 +7,7 @@ import matplotlib.pyplot as plt
 from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO, send
-from metrics import BandWidth, Loss, Jitter , VideoLoss
+from metrics import BandWidth, Loss, Jitter , VideoLoss , InterArrivalJitterAudio, DelayAudio
 
 
 app = Flask(__name__)
@@ -15,6 +16,8 @@ CORS(app)
 bw = BandWidth()
 loss = Loss()
 videoLoss = VideoLoss()
+audioJitter = InterArrivalJitterAudio()
+audioDelay = DelayAudio()
 jitter = Jitter(48000, 90000)
 p_type = {"audio" : 108 , "video" : 122}
 count = 0
@@ -43,11 +46,15 @@ def capture_live_packets(network_interface):
             bw.updateCounters()
             loss.updateCounters()
             videoLoss.updateCounters()
+            audioJitter.updateCounters()
+            audioDelay.updateCounters()
             capture_start_time = float(pkt.frame_info.time_epoch)
         loss.calcLoss(pkt , ssrc["audio"])
         bw.calculateBW(pkt , ssrc["audio"])
         videoLoss.calcLoss(pkt,  ssrc["audio"])
         jitter.calculateJitter(pkt)
+        audioJitter.calculateJitter(pkt , ssrc["audio"])
+        audioDelay.calculateJitter(pkt , ssrc["audio"])
 
 # def runCapture():
 #   start = time.process_time()
@@ -71,12 +78,16 @@ def helloWorld():
         obj["loss"] = loss.audio
         obj["bw"] = bw.audio
         obj["jitter"] = jitter.audio
+        obj["newJitter"] = audioJitter.jitter
         obj["pktRate"] = loss.pktRate
+        obj["delay"] = audioDelay.delay
     elif type == "video":
         obj["loss"] = videoLoss.loss
         obj["bw"] = bw.video
         obj["jitter"] = jitter.video
+        obj["newJitter"] = audioJitter.jitter
         obj["pktRate"] = videoLoss.pktRate
+        obj["delay"] = audioDelay.delay
     obj["count"] = count
     count += 1
     print(obj)
@@ -99,7 +110,7 @@ def helloWorld():
 
 if __name__ == '__main__':
     capture = threading.Thread(
-        target=capture_live_packets, args=("Wifi",), daemon=True)
+        target=capture_live_packets, args=("Ethernet",), daemon=True)
     capture.start()
     # calculate = threading.Thread(target=runCapture, daemon=True)
     # calculate.start()
