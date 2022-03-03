@@ -1,5 +1,6 @@
 import * as React from "react";
 import { styled, useTheme } from "@mui/material/styles";
+import { Switch } from "@mui/material";
 import Box from "@mui/material/Box";
 import MuiDrawer from "@mui/material/Drawer";
 import MuiAppBar from "@mui/material/AppBar";
@@ -21,6 +22,7 @@ import NetworkPlot from "./NetworkPlot";
 import NetworkChart from "./NetworkChart";
 import ApexPlot from "./ApexPlot";
 import AudioCharts from "./AudioCharts";
+import VideoCharts from "./VideoCharts";
 const drawerWidth = 240;
 
 const openedMixin = (theme) => ({
@@ -91,7 +93,29 @@ const Drawer = styled(MuiDrawer, {
 export default function MiniDrawer() {
   const theme = useTheme();
   const [open, setOpen] = React.useState(false);
+  const [data, updateData] = React.useState([]);
+  const [state, setState] = React.useState(true);
 
+  const handleChange = (event) => {
+    setState(event.target.checked);
+  };
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/metrics");
+        const json = await res.json();
+        updateData([...data, json]);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    const interval = setInterval(() => {
+      fetchData();
+    }, 1000);
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [data]);
   const handleDrawerOpen = () => {
     setOpen(true);
   };
@@ -157,7 +181,17 @@ export default function MiniDrawer() {
       </Drawer>
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <DrawerHeader />
-        <AudioCharts />
+        <Switch
+          checked={state}
+          onChange={handleChange}
+          label="Audio-Video Toggle"
+          color="primary"
+          name="checkedB"
+          inputProps={{ 'aria-label': 'primary checkbox' }}
+        />
+        {state &&
+          <AudioCharts data={data} />}
+        {!state && <VideoCharts data={data} />}
         {/* <ApexPlot /> */}
         {/* <NetworkPlot title="Packet Count vs Sequence Number" /> */}
         {/* <NetworkChart /> */}

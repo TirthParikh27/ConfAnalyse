@@ -22,7 +22,7 @@ jitter = Jitter(48000, 90000)
 p_type = {"audio" : 108 , "video" : 122}
 count = 0
 ssrc = {"audio" : "" , "video" : ""}
-type = "audio"
+type = "video"
 capture_start_time = 0.0
 
 def getSsrc(capture):
@@ -74,25 +74,31 @@ def helloWorld():
     global count
     global type
     obj = {}
-    if type == "audio":
-        obj["loss"] = loss.audio
-        obj["bw"] = bw.audio
-        obj["jitter"] = jitter.audio
-        obj["newJitter"] = audioJitter.jitter
-        obj["pktRate"] = loss.pktRate
-        obj["delay"] = audioDelay.delay
-    elif type == "video":
-        obj["loss"] = videoLoss.loss
-        obj["bw"] = bw.video
-        obj["jitter"] = jitter.video
-        obj["newJitter"] = audioJitter.jitter
-        obj["pktRate"] = videoLoss.pktRate
-        obj["delay"] = audioDelay.delay
+    obj["loss"] = loss.audio
+    obj["bw"] = bw.audio
+    obj["jitter"] = jitter.audio
+    obj["newJitter"] = audioJitter.jitter
+    obj["pktRate"] = loss.pktRate
+    obj["delay"] = audioDelay.delay
+    obj["videoloss"] = videoLoss.loss
+    obj["videobw"] = bw.video
+    obj["videojitter"] = jitter.video
+    obj["videopktRate"] = videoLoss.pktRate
+    # if type == "audio":
+    #     obj["loss"] = loss.audio
+    #     obj["bw"] = bw.audio
+    #     obj["jitter"] = jitter.audio
+    #     obj["newJitter"] = audioJitter.jitter
+    #     obj["pktRate"] = loss.pktRate
+    #     obj["delay"] = audioDelay.delay
+    # elif type == "video":
+    #     obj["videoloss"] = videoLoss.loss
+    #     obj["videobw"] = bw.video
+    #     obj["videojitter"] = jitter.video
+    #     obj["videopktRate"] = videoLoss.pktRate
     obj["count"] = count
     count += 1
     print(obj)
-    if loss.missed["audio"] != 0:
-        print("LOSS :", loss.missed["audio"])
     return obj, 200
 # def helloWorld():
 #     global count

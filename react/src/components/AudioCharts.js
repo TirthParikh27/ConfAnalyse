@@ -2,26 +2,8 @@ import { Grid } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import NetworkPlot from "./NetworkPlot";
 
-function AudioCharts() {
-  const [data, updateData] = useState([]);
+function AudioCharts({ data }) {
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch("http://localhost:5000/api/metrics");
-        const json = await res.json();
-        updateData([...data, json]);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    const interval = setInterval(() => {
-      fetchData();
-    }, 1000);
-    return () => {
-      window.clearInterval(interval);
-    };
-  }, [data]);
   return (
     <div>
       <Grid container spacing={6}>
@@ -29,42 +11,42 @@ function AudioCharts() {
           <NetworkPlot
             data={data.slice(-100)}
             dataKey="loss"
-            title="Packet Loss per second"
+            title="Audio Packet Loss per second"
           />
         </Grid>
         <Grid item xs={12}>
           <NetworkPlot
             data={data.slice(-100)}
             dataKey="jitter"
-            title="Jitter per second"
+            title="Audio Jitter per second"
           />
         </Grid>
         <Grid item xs={12}>
           <NetworkPlot
             data={data.slice(-100)}
             dataKey="newJitter"
-            title="Packet Inter-Arrival Jitter"
+            title="Audio Packet Inter-Arrival Jitter"
           />
         </Grid>
         <Grid item xs={12}>
           <NetworkPlot
             data={data.slice(-100)}
             dataKey="delay"
-            title="Receiving Delay"
+            title="Audio Receiving Delay"
           />
         </Grid>
         <Grid item xs={12}>
           <NetworkPlot
             data={data.slice(-100)}
             dataKey="bw"
-            title="Throughput (Kbps)"
+            title="Audio Throughput (Kbps)"
           />
         </Grid>
         <Grid item xs={12}>
           <NetworkPlot
             data={data.slice(-100)}
             dataKey="pktRate"
-            title="Packets per second"
+            title="Audio Packets per second"
           />
         </Grid>
       </Grid>

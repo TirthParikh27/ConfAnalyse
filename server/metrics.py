@@ -21,7 +21,7 @@ class VideoLoss:
 
     def updateCounters(self):
         if self.totalPackets != 0:
-            self.loss = 1 - (self.receivedPackets/self.totalPackets)
+            self.loss = (1 - (self.receivedPackets/self.totalPackets))*100
             print("video packet loss = " , self.loss)
             print("Received packets = " , self.receivedPackets)
             print("Total packets = " , self.totalPackets)
@@ -44,7 +44,7 @@ class VideoLoss:
                         self.gap = int(pkt.rtp.seq) - self.ssrcs[pkt.rtp.ssrc]
                         self.ssrcs[pkt.rtp.ssrc] = int(pkt.rtp.seq)
                         self.receivedPackets += 1
-                        self.totalPackets += gap
+                        self.totalPackets += self.gap
 
 
 class Loss:
@@ -106,7 +106,7 @@ class InterArrivalJitterAudio:
 
     def updateCounters(self):
         if len(self.deltas) != 0:
-            self.jitter = np.std(self.deltas, dtype = np.float64)
+            self.jitter = (np.std(self.deltas, dtype = np.float64)) * 1000.00
         self.deltas.clear()
 
     def calculateJitter(self , pkt , audio_ssrc):
