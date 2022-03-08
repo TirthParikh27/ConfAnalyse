@@ -46,6 +46,41 @@ class VideoLoss:
                         self.receivedPackets += 1
                         self.totalPackets += self.gap
 
+class ScreenLoss:
+    def __init__(self):
+        self.loss = 0
+        self.ssrcs = {}
+        self.totalPackets = 0
+        self.receivedPackets = 0
+        self.pktRate = 0
+        self.gap = 0
+
+    def updateCounters(self):
+        if self.totalPackets != 0:
+            self.loss = (1 - (self.receivedPackets/self.totalPackets))*100
+            print("Screen packet loss = " , self.loss)
+            print("Received packets = " , self.receivedPackets)
+            print("Total packets = " , self.totalPackets)
+        else:
+            print("NO PACKETS !!!!")
+        self.pktRate = self.receivedPackets
+        self.receivedPackets = 0
+        self.totalPackets = 0
+
+    def calcLoss(self, pkt):
+        if hasattr(pkt, "rtp"):
+            if hasattr(pkt.rtp, "seq"):
+                # print(pkt.rtp.seq)
+                if int(pkt.udp.srcport) == 3481 and hasattr(pkt.rtp, "ssrc"):
+                    if pkt.rtp.ssrc not in self.ssrcs:
+                        self.ssrcs[pkt.rtp.ssrc] = int(pkt.rtp.seq)
+                        self.receivedPackets += 1
+                        self.totalPackets += 1
+                    else:
+                        self.gap = int(pkt.rtp.seq) - self.ssrcs[pkt.rtp.ssrc]
+                        self.ssrcs[pkt.rtp.ssrc] = int(pkt.rtp.seq)
+                        self.receivedPackets += 1
+                        self.totalPackets += self.gap
 
 class Loss:
     def __init__(self):
@@ -207,11 +242,12 @@ class BandWidth:
     def __init__(self):
         self.audio = 0
         self.video = 0
-        self.seconds = {"audio": [0], "video": [0]}
-        self.start_sec = {"audio": 0, "video": 0}
-        self.sec_count = {"audio": 0, "video": 0}
-        self.count = {"audio": 0, "video": 0}
-        self.data = {"audio": 0, "video": 0}
+        self.screen = 0
+        self.seconds = {"audio": [0], "video": [0], "screen": [0]}
+        self.start_sec = {"audio": 0, "video": 0 , "screen": 0}
+        self.sec_count = {"audio": 0, "video": 0, "screen" : 0}
+        self.count = {"audio": 0, "video": 0, "screen" : 0}
+        self.data = {"audio": 0, "video": 0,  "screen" : 0}
 
     def updateCounters(self):
         # AUDIO
@@ -225,6 +261,11 @@ class BandWidth:
         self.seconds["video"].append(self.sec_count["video"])
         self.video = round(self.data["video"]/125, 2)
         self.data["video"] = 0
+        # SCREEN
+        self.sec_count["screen"] += 1
+        self.seconds["screen"].append(self.sec_count["screen"])
+        self.screen = round(self.data["screen"]/125, 2)
+        self.data["screen"] = 0
 
     def calculateBW(self, pkt, audio_ssrc):
         if hasattr(pkt, "rtp"):
@@ -235,3 +276,6 @@ class BandWidth:
             elif int(pkt.udp.srcport) == 3480 and hasattr(pkt.rtp, "ssrc") and pkt.rtp.ssrc != audio_ssrc:
                 self.data["video"] += float(pkt.frame_info.len)
                 self.count["video"] += 1
+            elif int(pkt.udp.srcport) == 3481 and hasattr(pkt.rtp, "ssrc"):
+                self.data["screen"] += float(pkt.frame_info.len)
+                self.count["screen"] += 1

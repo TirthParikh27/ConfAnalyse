@@ -2,7 +2,7 @@ import { Grid } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import NetworkPlot from "./NetworkPlot";
 
-function VideoCharts({data}) {
+function ScreenShareCharts({ data }) {
 
   return (
     <div>
@@ -10,29 +10,22 @@ function VideoCharts({data}) {
         <Grid item xs={12}>
           <NetworkPlot
             data={data.slice(-100)}
-            dataKey="videoloss"
-            title="Video Packet Loss per second"
-          />
-        </Grid>
-        {/* <Grid item xs={12}>
-          <NetworkPlot
-            data={data.slice(-100)}
-            dataKey="videojitter"
-            title="Video Jitter per second"
-          />
-        </Grid> */}
-        <Grid item xs={12}>
-          <NetworkPlot
-            data={data.slice(-100)}
-            dataKey="videobw"
-            title="Video Throughput (Kbps)"
+            dataKey="screenloss"
+            title="SCreen Sharing Packet Loss per second"
           />
         </Grid>
         <Grid item xs={12}>
           <NetworkPlot
             data={data.slice(-100)}
-            dataKey="videopktRate"
-            title="Video Packets per second"
+            dataKey="screenbw"
+            title="Screen Sharing Throughput (Kbps)"
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <NetworkPlot
+            data={data.slice(-100)}
+            dataKey="screenpktRate"
+            title="Screen Sharing Packets per second"
           />
         </Grid>
       </Grid>
@@ -40,4 +33,5 @@ function VideoCharts({data}) {
   );
 }
 
-export default VideoCharts;
+export default ScreenShareCharts;
+

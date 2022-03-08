@@ -23,6 +23,13 @@ import NetworkChart from "./NetworkChart";
 import ApexPlot from "./ApexPlot";
 import AudioCharts from "./AudioCharts";
 import VideoCharts from "./VideoCharts";
+import ScreenShareCharts from "./ScreenShareCharts";
+import Radio from '@mui/material/Radio';
+import RadioGroup from '@mui/material/RadioGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import FormControl from '@mui/material/FormControl';
+import FormLabel from '@mui/material/FormLabel';
+
 const drawerWidth = 240;
 
 const openedMixin = (theme) => ({
@@ -95,6 +102,11 @@ export default function MiniDrawer() {
   const [open, setOpen] = React.useState(false);
   const [data, updateData] = React.useState([]);
   const [state, setState] = React.useState(true);
+  const [value, setValue] = React.useState('audio');
+
+  const handleChangeRadio = (event) => {
+    setValue(event.target.value);
+  };
 
   const handleChange = (event) => {
     setState(event.target.checked);
@@ -181,17 +193,24 @@ export default function MiniDrawer() {
       </Drawer>
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <DrawerHeader />
-        <Switch
-          checked={state}
-          onChange={handleChange}
-          label="Audio-Video Toggle"
-          color="primary"
-          name="checkedB"
-          inputProps={{ 'aria-label': 'primary checkbox' }}
-        />
-        {state &&
+        <FormControl>
+          <FormLabel id="demo-controlled-radio-buttons-group">Media flow type</FormLabel>
+          <RadioGroup
+          row
+            aria-labelledby="demo-controlled-radio-buttons-group"
+            name="controlled-radio-buttons-group"
+            value={value}
+            onChange={handleChangeRadio}
+          >
+            <FormControlLabel value="audio" control={<Radio />} label="Audio" />
+            <FormControlLabel value="video" control={<Radio />} label="Video" />
+            <FormControlLabel value="screen" control={<Radio />} label="Screen Share" />
+          </RadioGroup>
+        </FormControl>
+        {value === "audio" &&
           <AudioCharts data={data} />}
-        {!state && <VideoCharts data={data} />}
+        {value === "video" && <VideoCharts data={data} />}
+        {value === "screen" && <ScreenShareCharts data={data} />}
         {/* <ApexPlot /> */}
         {/* <NetworkPlot title="Packet Count vs Sequence Number" /> */}
         {/* <NetworkChart /> */}

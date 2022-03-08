@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO, send
-from metrics import BandWidth, Loss, Jitter , VideoLoss , InterArrivalJitterAudio, DelayAudio
+from metrics import BandWidth, Loss, Jitter , VideoLoss , InterArrivalJitterAudio, DelayAudio, ScreenLoss
 
 
 app = Flask(__name__)
@@ -16,6 +16,7 @@ CORS(app)
 bw = BandWidth()
 loss = Loss()
 videoLoss = VideoLoss()
+screenLoss = ScreenLoss()
 audioJitter = InterArrivalJitterAudio()
 audioDelay = DelayAudio()
 jitter = Jitter(48000, 90000)
@@ -36,8 +37,8 @@ def getSsrc(capture):
           break
 
 def capture_live_packets(network_interface):
-    capture = pyshark.LiveCapture(interface=network_interface, bpf_filter="udp and (port 3479 or port 3480)", decode_as={
-                                  'udp.port==3479': 'rtp', 'udp.port==3480': 'rtp'})
+    capture = pyshark.LiveCapture(interface=network_interface, bpf_filter="udp and (port 3479 or port 3480 or port 3481)", decode_as={
+                                  'udp.port==3479': 'rtp', 'udp.port==3480': 'rtp' , 'udp.port==3481': 'rtp'})
     global ssrc
     global capture_start_time
     getSsrc(capture)
@@ -46,12 +47,14 @@ def capture_live_packets(network_interface):
             bw.updateCounters()
             loss.updateCounters()
             videoLoss.updateCounters()
+            screenLoss.updateCounters()
             audioJitter.updateCounters()
             audioDelay.updateCounters()
             capture_start_time = float(pkt.frame_info.time_epoch)
         loss.calcLoss(pkt , ssrc["audio"])
         bw.calculateBW(pkt , ssrc["audio"])
         videoLoss.calcLoss(pkt,  ssrc["audio"])
+        screenLoss.calcLoss(pkt)
         jitter.calculateJitter(pkt)
         audioJitter.calculateJitter(pkt , ssrc["audio"])
         audioDelay.calculateJitter(pkt , ssrc["audio"])
@@ -84,6 +87,10 @@ def helloWorld():
     obj["videobw"] = bw.video
     obj["videojitter"] = jitter.video
     obj["videopktRate"] = videoLoss.pktRate
+    obj["screenloss"] = screenLoss.loss
+    obj["screenpktRate"] = screenLoss.pktRate
+    obj["screenbw"] = bw.screen
+
     # if type == "audio":
     #     obj["loss"] = loss.audio
     #     obj["bw"] = bw.audio
