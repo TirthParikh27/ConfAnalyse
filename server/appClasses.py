@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO, send
-from metrics import BandWidth, Loss, Jitter , VideoLoss , InterArrivalJitterAudio, DelayAudio, ScreenLoss
+from metrics import BandWidth, Loss, Jitter , VideoLoss , InterArrivalJitterAudio, DelayAudio, ScreenLoss , VideoFps
 
 
 app = Flask(__name__)
@@ -15,6 +15,7 @@ CORS(app)
 
 bw = BandWidth()
 loss = Loss()
+videoFps = VideoFps()
 videoLoss = VideoLoss()
 screenLoss = ScreenLoss()
 audioJitter = InterArrivalJitterAudio()
@@ -47,12 +48,14 @@ def capture_live_packets(network_interface):
             bw.updateCounters()
             loss.updateCounters()
             videoLoss.updateCounters()
+            videoFps.updateCounters()
             screenLoss.updateCounters()
             audioJitter.updateCounters()
             audioDelay.updateCounters()
             capture_start_time = float(pkt.frame_info.time_epoch)
         loss.calcLoss(pkt , ssrc["audio"])
         bw.calculateBW(pkt , ssrc["audio"])
+        videoFps.calcFps(pkt , ssrc["audio"])
         videoLoss.calcLoss(pkt,  ssrc["audio"])
         screenLoss.calcLoss(pkt)
         jitter.calculateJitter(pkt)
@@ -84,6 +87,7 @@ def helloWorld():
     obj["pktRate"] = loss.pktRate
     obj["delay"] = audioDelay.delay
     obj["videoloss"] = videoLoss.loss
+    obj["videofps"] = videoFps.fps
     obj["videobw"] = bw.video
     obj["videojitter"] = jitter.video
     obj["videopktRate"] = videoLoss.pktRate
@@ -123,7 +127,7 @@ def helloWorld():
 
 if __name__ == '__main__':
     capture = threading.Thread(
-        target=capture_live_packets, args=("Ethernet",), daemon=True)
+        target=capture_live_packets, args=("WiFi",), daemon=True)
     capture.start()
     # calculate = threading.Thread(target=runCapture, daemon=True)
     # calculate.start()

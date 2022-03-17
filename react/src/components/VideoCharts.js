@@ -2,8 +2,7 @@ import { Grid } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import NetworkPlot from "./NetworkPlot";
 
-function VideoCharts({data}) {
-
+function VideoCharts({ data }) {
   return (
     <div>
       <Grid container spacing={6}>
@@ -12,6 +11,14 @@ function VideoCharts({data}) {
             data={data.slice(-100)}
             dataKey="videoloss"
             title="Video Packet Loss per second"
+          />
+        </Grid>
+
+        <Grid item xs={12}>
+          <NetworkPlot
+            data={data.slice(-100)}
+            dataKey="videofps"
+            title="Video FPS"
           />
         </Grid>
         {/* <Grid item xs={12}>

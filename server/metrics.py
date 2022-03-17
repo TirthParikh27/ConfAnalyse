@@ -1,12 +1,36 @@
 from re import L
 import numpy as np
-
+from statistics import mean
 missed = 0
 count = 0
 seqNumber = 0
 gap = 1
 metrics = {"video": {"loss": 0, "jitter": 0, "bw": 0, "delay": 0},
            "audio": {"loss": 0, "jitter": 0, "bw": 0, "delay": 0}}
+
+
+class VideoFps:
+    def __init__(self):
+        self.fps = 0
+        self.ssrcs = {}
+
+    def updateCounters(self):
+        listSsrcFps = list(self.ssrcs.values())
+        if len(listSsrcFps) > 0:
+            self.fps = mean(listSsrcFps)
+            for ssrc in self.ssrcs:
+                self.ssrcs[ssrc] = 0
+
+    def calcFps(self, pkt, audio_ssrc):
+        if hasattr(pkt, "rtp"):
+            if hasattr(pkt.rtp, "seq"):
+                # print(pkt.rtp.seq)
+                if int(pkt.udp.srcport) == 3480 and hasattr(pkt.rtp, "ssrc") and pkt.rtp.ssrc != audio_ssrc and hasattr(pkt.rtp , "marker") and int(pkt.rtp.marker) == 1:
+                    # print(pkt.rtp.marker)
+                    if pkt.rtp.ssrc not in self.ssrcs:
+                        self.ssrcs[pkt.rtp.ssrc] = 1
+                    else:
+                        self.ssrcs[pkt.rtp.ssrc] += 1
 
 
 
@@ -22,9 +46,9 @@ class VideoLoss:
     def updateCounters(self):
         if self.totalPackets != 0:
             self.loss = (1 - (self.receivedPackets/self.totalPackets))*100
-            print("video packet loss = " , self.loss)
-            print("Received packets = " , self.receivedPackets)
-            print("Total packets = " , self.totalPackets)
+            # print("video packet loss = ", self.loss)
+            # print("Received packets = ", self.receivedPackets)
+            # print("Total packets = ", self.totalPackets)
         else:
             print("NO PACKETS !!!!")
         self.pktRate = self.receivedPackets
@@ -46,6 +70,7 @@ class VideoLoss:
                         self.receivedPackets += 1
                         self.totalPackets += self.gap
 
+
 class ScreenLoss:
     def __init__(self):
         self.loss = 0
@@ -58,9 +83,9 @@ class ScreenLoss:
     def updateCounters(self):
         if self.totalPackets != 0:
             self.loss = (1 - (self.receivedPackets/self.totalPackets))*100
-            print("Screen packet loss = " , self.loss)
-            print("Received packets = " , self.receivedPackets)
-            print("Total packets = " , self.totalPackets)
+            # print("Screen packet loss = ", self.loss)
+            # print("Received packets = ", self.receivedPackets)
+            # print("Total packets = ", self.totalPackets)
         else:
             print("NO PACKETS !!!!")
         self.pktRate = self.receivedPackets
@@ -81,6 +106,7 @@ class ScreenLoss:
                         self.ssrcs[pkt.rtp.ssrc] = int(pkt.rtp.seq)
                         self.receivedPackets += 1
                         self.totalPackets += self.gap
+
 
 class Loss:
     def __init__(self):
@@ -132,33 +158,36 @@ class Loss:
                     self.video = round(
                         (self.missed["video"]/(self.count["video"]+self.missed["video"])), 4) * 100
 
+
 class InterArrivalJitterAudio:
     def __init__(self):
         self.deltas = []
         self.prevTimestamp = 0.0
-        self.jitter =  0.0   
+        self.jitter = 0.0
         self.count = 0
 
     def updateCounters(self):
         if len(self.deltas) != 0:
-            self.jitter = (np.std(self.deltas, dtype = np.float64)) * 1000.00
+            self.jitter = (np.std(self.deltas, dtype=np.float64)) * 1000.00
         self.deltas.clear()
 
-    def calculateJitter(self , pkt , audio_ssrc):
-        if hasattr(pkt , "rtp") and hasattr(pkt.rtp , "ssrc") and pkt.rtp.ssrc == audio_ssrc:
-           
+    def calculateJitter(self, pkt, audio_ssrc):
+        if hasattr(pkt, "rtp") and hasattr(pkt.rtp, "ssrc") and pkt.rtp.ssrc == audio_ssrc:
+
             if self.count == 0:
                 self.count += 1
                 self.prevTimestamp = float(pkt.frame_info.time_epoch)
             else:
-                self.deltas.append(float(pkt.frame_info.time_epoch) - self.prevTimestamp)
+                self.deltas.append(
+                    float(pkt.frame_info.time_epoch) - self.prevTimestamp)
                 self.prevTimestamp = float(pkt.frame_info.time_epoch)
+
 
 class DelayAudio:
     def __init__(self):
         self.deltas = []
         self.prevTimestamp = 0.0
-        self.delay =  0.0   
+        self.delay = 0.0
         self.count = 0
 
     def updateCounters(self):
@@ -166,14 +195,15 @@ class DelayAudio:
             self.delay = np.average(self.deltas)
         self.deltas.clear()
 
-    def calculateJitter(self , pkt , audio_ssrc):
-        if hasattr(pkt , "rtp") and hasattr(pkt.rtp , "ssrc") and pkt.rtp.ssrc == audio_ssrc:
-           
+    def calculateJitter(self, pkt, audio_ssrc):
+        if hasattr(pkt, "rtp") and hasattr(pkt.rtp, "ssrc") and pkt.rtp.ssrc == audio_ssrc:
+
             if self.count == 0:
                 self.count += 1
                 self.prevTimestamp = float(pkt.frame_info.time_epoch)
             else:
-                self.deltas.append(float(pkt.frame_info.time_epoch) - self.prevTimestamp)
+                self.deltas.append(
+                    float(pkt.frame_info.time_epoch) - self.prevTimestamp)
                 self.prevTimestamp = float(pkt.frame_info.time_epoch)
 
 
@@ -244,10 +274,10 @@ class BandWidth:
         self.video = 0
         self.screen = 0
         self.seconds = {"audio": [0], "video": [0], "screen": [0]}
-        self.start_sec = {"audio": 0, "video": 0 , "screen": 0}
-        self.sec_count = {"audio": 0, "video": 0, "screen" : 0}
-        self.count = {"audio": 0, "video": 0, "screen" : 0}
-        self.data = {"audio": 0, "video": 0,  "screen" : 0}
+        self.start_sec = {"audio": 0, "video": 0, "screen": 0}
+        self.sec_count = {"audio": 0, "video": 0, "screen": 0}
+        self.count = {"audio": 0, "video": 0, "screen": 0}
+        self.data = {"audio": 0, "video": 0,  "screen": 0}
 
     def updateCounters(self):
         # AUDIO
