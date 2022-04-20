@@ -19,10 +19,10 @@ export default function NetworkPlot({ data, dataKey, title }) {
     <Card>
       <Typography variant="h5">{title}</Typography>
       <CardContent>
-        <ResponsiveContainer key={Math.random()} width="100%" height={300}>
+        <ResponsiveContainer key={Math.random()} width="100%" height={250}>
           <LineChart
             key={Math.random()}
-            height={300}
+            height={250}
             data={data}
             margin={{
               top: 5,

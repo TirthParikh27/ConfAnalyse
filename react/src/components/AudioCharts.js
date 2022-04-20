@@ -1,12 +1,16 @@
 import { Grid } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import NetworkPlot from "./NetworkPlot";
+import UxPlot from "./UxPlot";
 
 function AudioCharts({ data }) {
 
   return (
     <div>
-      <Grid container spacing={6}>
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <UxPlot type="audio" uxData={data.slice(-100)} />
+        </Grid>
         <Grid item xs={12}>
           <NetworkPlot
             data={data.slice(-100)}

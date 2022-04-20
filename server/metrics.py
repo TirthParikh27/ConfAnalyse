@@ -1,3 +1,4 @@
+from asyncio.windows_events import NULL
 from re import L
 import numpy as np
 from statistics import mean
@@ -35,8 +36,10 @@ class VideoFps:
 
 
 class VideoLoss:
-    def __init__(self):
+    def __init__(self, thresholds):
         self.loss = 0
+        self.ux = ""
+        self.thresholds = thresholds
         self.ssrcs = {}
         self.totalPackets = 0
         self.receivedPackets = 0
@@ -46,14 +49,26 @@ class VideoLoss:
     def updateCounters(self):
         if self.totalPackets != 0:
             self.loss = (1 - (self.receivedPackets/self.totalPackets))*100
+            self.ux = self.getUX()
             # print("video packet loss = ", self.loss)
             # print("Received packets = ", self.receivedPackets)
             # print("Total packets = ", self.totalPackets)
         else:
             print("NO PACKETS !!!!")
+            self.ux = ""
         self.pktRate = self.receivedPackets
         self.receivedPackets = 0
         self.totalPackets = 0
+    
+    def getUX(self):
+        if len(self.thresholds) == 0:
+            return ""
+        if self.loss < self.thresholds[0]:
+            return "high"
+        elif self.loss >= self.thresholds[0] and self.loss < self.thresholds[1]:
+            return "medium"
+        elif self.loss >= self.thresholds[1]:
+            return "low"
 
     def calcLoss(self, pkt, audio_ssrc):
         if hasattr(pkt, "rtp"):
@@ -109,8 +124,10 @@ class ScreenLoss:
 
 
 class Loss:
-    def __init__(self):
+    def __init__(self , thresholds):
         self.audio = 0
+        self.ux = ""
+        self.thresholds = thresholds
         self.video = 0
         self.pktRate = 0
         self.count = {"audio": 0, "video": 0}
@@ -125,11 +142,22 @@ class Loss:
         self.missed["audio"] = 0
         self.count["audio"] = 1
         self.audio = 0
+        self.ux = ""
         # VIDEO
         self.missed["video"] = 0
         self.count["video"] = 1
         self.video = 0
-
+    
+    def getUX(self):
+        if len(self.thresholds) == 0:
+            return ""
+        if self.audio < self.thresholds[0]:
+            return "high"
+        elif self.audio >= self.thresholds[0] and self.audio < self.thresholds[1]:
+            return "medium"
+        elif self.audio >= self.thresholds[1]:
+            return "low"
+    
     def calcLoss(self, pkt, audio_ssrc):
         if hasattr(pkt, "rtp"):
             if hasattr(pkt.rtp, "seq"):
@@ -144,6 +172,7 @@ class Loss:
                     self.seqNumber["audio"] = int(pkt.rtp.seq)
                     self.audio = round(
                         (self.missed["audio"]/(self.count["audio"]+self.missed["audio"])), 4) * 100
+                    self.ux = self.getUX()
 
                 elif int(pkt.udp.srcport) == 3480 and hasattr(pkt.rtp, "ssrc") and pkt.rtp.ssrc != audio_ssrc:
 

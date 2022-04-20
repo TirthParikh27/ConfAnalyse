@@ -2,6 +2,7 @@ from email.mime import audio
 import pyshark
 import time
 import threading
+import yaml
 import metrics
 import matplotlib.pyplot as plt
 from flask import Flask
@@ -12,11 +13,18 @@ from metrics import BandWidth, Loss, Jitter , VideoLoss , InterArrivalJitterAudi
 
 app = Flask(__name__)
 CORS(app)
-
+conferencingApp = "teams"
+config = {}
+with open("thresholds.yml" , "r") as stream:
+        try:
+            config = yaml.safe_load(stream)
+        except yaml.YAMLError as err:
+            print(err)
+            config = {"packet_loss" : {conferencingApp : {"audio" : [] , "video" : []}}}
 bw = BandWidth()
-loss = Loss()
+loss = Loss(config["packet_loss"][conferencingApp]["audio"])
 videoFps = VideoFps()
-videoLoss = VideoLoss()
+videoLoss = VideoLoss(config["packet_loss"][conferencingApp]["video"])
 screenLoss = ScreenLoss()
 audioJitter = InterArrivalJitterAudio()
 audioDelay = DelayAudio()
@@ -62,6 +70,7 @@ def capture_live_packets(network_interface):
         audioJitter.calculateJitter(pkt , ssrc["audio"])
         audioDelay.calculateJitter(pkt , ssrc["audio"])
 
+
 # def runCapture():
 #   start = time.process_time()
 #   loss = 0
@@ -81,12 +90,14 @@ def helloWorld():
     global type
     obj = {}
     obj["loss"] = loss.audio
+    obj["audioUx"] = loss.ux
     obj["bw"] = bw.audio
     obj["jitter"] = jitter.audio
     obj["newJitter"] = audioJitter.jitter
     obj["pktRate"] = loss.pktRate
     obj["delay"] = audioDelay.delay
     obj["videoloss"] = videoLoss.loss
+    obj["videoUx"] = videoLoss.ux
     obj["videofps"] = videoFps.fps
     obj["videobw"] = bw.video
     obj["videojitter"] = jitter.video
@@ -131,4 +142,5 @@ if __name__ == '__main__':
     capture.start()
     # calculate = threading.Thread(target=runCapture, daemon=True)
     # calculate.start()
+    print("CONFIGURATION : " , config)
     app.run()
