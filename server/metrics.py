@@ -17,7 +17,7 @@ class VideoFps:
     def updateCounters(self):
         listSsrcFps = list(self.ssrcs.values())
         if len(listSsrcFps) > 0:
-            self.fps = mean(listSsrcFps)
+            self.fps = sum(listSsrcFps)
             for ssrc in self.ssrcs:
                 self.ssrcs[ssrc] = 0
 

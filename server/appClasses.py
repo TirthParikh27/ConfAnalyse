@@ -127,7 +127,7 @@ def helloWorld():
 
 if __name__ == '__main__':
     capture = threading.Thread(
-        target=capture_live_packets, args=("WiFi",), daemon=True)
+        target=capture_live_packets, args=("Ethernet",), daemon=True)
     capture.start()
     # calculate = threading.Thread(target=runCapture, daemon=True)
     # calculate.start()
