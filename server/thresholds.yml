@@ -1,0 +1,37 @@
+packet_loss : 
+  - zoom : 
+      audio : 
+        - 30
+        - 40
+      video :
+        - 20
+        - 40
+  - teams : 
+      audio : 
+        - 40
+        - 70
+      video :
+        - 20
+        - 35
+  - skype : 
+      audio : 
+        - 40
+        - 60
+      video :
+        - 30
+        - 50
+  - whatsapp : 
+      audio : 
+        - 40
+        - 60
+      video :
+        - 20
+        - 30
+  - googemeets :
+    audio :
+      - 50
+      - 60
+    video :
+      - 20
+      - 40
+  
