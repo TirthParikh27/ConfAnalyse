@@ -11,16 +11,29 @@ metrics = {"video": {"loss": 0, "jitter": 0, "bw": 0, "delay": 0},
 
 
 class VideoFps:
-    def __init__(self):
+    def __init__(self , thresholds):
         self.fps = 0
         self.ssrcs = {}
+        self.thresholds = thresholds
+        self.ux = ""
 
     def updateCounters(self):
         listSsrcFps = list(self.ssrcs.values())
         if len(listSsrcFps) > 0:
             self.fps = sum(listSsrcFps)
+            self.ux = self.getUX()
             for ssrc in self.ssrcs:
                 self.ssrcs[ssrc] = 0
+
+    def getUX(self):
+        if len(self.thresholds) == 0 or self.fps == 0:
+            return ""
+        if self.fps >= self.thresholds[0] :
+            return "high"
+        elif self.fps < self.thresholds[0] and self.fps > self.thresholds[1]:
+            return "medium"
+        elif self.fps <= self.thresholds[1]:
+            return "low"
 
     def calcFps(self, pkt, audio_ssrc):
         if hasattr(pkt, "rtp"):
@@ -237,9 +250,11 @@ class DelayAudio:
 
 
 class Jitter:
-    def __init__(self, audioClock, videoClock):
+    def __init__(self, audioClock, videoClock , thresholds):
         self.audio = 0
         self.video = 0
+        self.ux = ""
+        self.thresholds = thresholds
         self.start_sec = {"audio": 0, "video": 0}
         self.rtp_t1 = {"audio": 0, "video": 0}
         self.unix_diff = 0
@@ -251,6 +266,16 @@ class Jitter:
         self.rtp_time_unit = {"audio": 1 /
                               self.clock["audio"], "video": 1/self.clock["video"]}
         self.countTemp = 0
+
+    def getUX(self):
+        if len(self.thresholds) == 0:
+            return ""
+        if self.audio < self.thresholds[0]:
+            return "high"
+        elif self.audio >= self.thresholds[0] and self.audio < self.thresholds[1]:
+            return "medium"
+        elif self.audio >= self.thresholds[1]:
+            return "low"
 
     def calculateJitter(self, pkt):
         if hasattr(pkt, "rtp") and hasattr(pkt.rtp, "timestamp"):
@@ -272,6 +297,7 @@ class Jitter:
                         self.diff = self.unix_diff - self.rtp_diff
                         self.audio = self.audio + \
                             ((abs(self.diff)-self.audio)/16)
+                        self.ux = self.getUX()
                         self.countTemp += 1
                         # print(self.unix_diff)
                 self.count["audio"] += 1
@@ -298,10 +324,12 @@ class Jitter:
 
 
 class BandWidth:
-    def __init__(self):
+    def __init__(self , thresholds):
         self.audio = 0
         self.video = 0
         self.screen = 0
+        self.ux = ""
+        self.thresholds = thresholds
         self.seconds = {"audio": [0], "video": [0], "screen": [0]}
         self.start_sec = {"audio": 0, "video": 0, "screen": 0}
         self.sec_count = {"audio": 0, "video": 0, "screen": 0}
@@ -319,12 +347,23 @@ class BandWidth:
         self.sec_count["video"] += 1
         self.seconds["video"].append(self.sec_count["video"])
         self.video = round(self.data["video"]/125, 2)
+        self.ux = self.getUX()
         self.data["video"] = 0
         # SCREEN
         self.sec_count["screen"] += 1
         self.seconds["screen"].append(self.sec_count["screen"])
         self.screen = round(self.data["screen"]/125, 2)
         self.data["screen"] = 0
+
+    def getUX(self):
+        if len(self.thresholds) == 0 or self.video == 0:
+            return ""
+        if self.video > self.thresholds[0]:
+            return "high"
+        elif self.video <= self.thresholds[0] and self.video > self.thresholds[1]:
+            return "medium"
+        elif self.video <= self.thresholds[1]:
+            return "low"
 
     def calculateBW(self, pkt, audio_ssrc):
         if hasattr(pkt, "rtp"):

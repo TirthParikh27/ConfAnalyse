@@ -31,7 +31,8 @@ function Copyright() {
 }
 
 const cards = ["Microsoft Teams", "Whatsapp", "Google Meets", "Skype"];
-const logoLinks = ["/Microsoft-Teams-logo.png" , "/Whatsapp-logo.png" , "/Google-Meets-logo.png" , "/Skype-logo.png"]
+const appNames = ["teams", "whatsapp", "googlemeets", "skype"];
+const logoLinks = ["/Microsoft-Teams-logo.png", "/Whatsapp-logo.png", "/Google-Meets-logo.png", "/Skype-logo.png"]
 const theme = createTheme();
 
 export default function IntroConfig() {
@@ -87,7 +88,7 @@ export default function IntroConfig() {
         <Container sx={{ py: 8 }} maxWidth="md">
           {/* End hero unit */}
           <Grid container spacing={4}>
-            {cards.map((card , index) => (
+            {cards.map((card, index) => (
               <Grid item key={card} xs={12} sm={6} md={4}>
                 <Card
                   sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
@@ -110,7 +111,24 @@ export default function IntroConfig() {
                     </Typography> */}
                   </CardContent>
                   <CardActions>
-                    <Button size="medium" onClick={() => { navigate("/analyze") }} >Analyze</Button>
+                    <Button size="medium" onClick={() => {
+                      fetch("http://localhost:5000/api/setApp", {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ application: appNames[index] }),
+                      }).then(response => {
+                        if(!response.ok){
+                          throw new Error("Unable to configure the application !")
+                        }
+                        return response.json()
+                      }).then(data => {
+                        console.log(data.msg)
+                        navigate("/analyze")
+                      })
+
+                    }} >Analyze</Button>
                   </CardActions>
                 </Card>
               </Grid>

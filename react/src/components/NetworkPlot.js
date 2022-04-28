@@ -14,15 +14,15 @@ import {
 
 // let endPoint = "http://localhost:5000";
 // let socket = io.connect(`${endPoint}`);
-export default function NetworkPlot({ data, dataKey, title }) {
+export default function NetworkPlot({ data, dataKey, title , height }) {
   return (
     <Card>
       <Typography variant="h5">{title}</Typography>
       <CardContent>
-        <ResponsiveContainer key={Math.random()} width="100%" height={250}>
+        <ResponsiveContainer key={Math.random()} width="100%" height={height}>
           <LineChart
             key={Math.random()}
-            height={250}
+            height={height}
             data={data}
             margin={{
               top: 5,

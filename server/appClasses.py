@@ -5,7 +5,7 @@ import threading
 import yaml
 import metrics
 import matplotlib.pyplot as plt
-from flask import Flask
+from flask import Flask , request
 from flask_cors import CORS
 from flask_socketio import SocketIO, send
 from metrics import BandWidth, Loss, Jitter , VideoLoss , InterArrivalJitterAudio, DelayAudio, ScreenLoss , VideoFps
@@ -13,7 +13,7 @@ from metrics import BandWidth, Loss, Jitter , VideoLoss , InterArrivalJitterAudi
 
 app = Flask(__name__)
 CORS(app)
-conferencingApp = "teams"
+conferencingApp = ""
 config = {}
 with open("thresholds.yml" , "r") as stream:
         try:
@@ -21,14 +21,7 @@ with open("thresholds.yml" , "r") as stream:
         except yaml.YAMLError as err:
             print(err)
             config = {"packet_loss" : {conferencingApp : {"audio" : [] , "video" : []}}}
-bw = BandWidth()
-loss = Loss(config["packet_loss"][conferencingApp]["audio"])
-videoFps = VideoFps()
-videoLoss = VideoLoss(config["packet_loss"][conferencingApp]["video"])
-screenLoss = ScreenLoss()
-audioJitter = InterArrivalJitterAudio()
-audioDelay = DelayAudio()
-jitter = Jitter(48000, 90000)
+
 p_type = {"audio" : 108 , "video" : 122}
 count = 0
 ssrc = {"audio" : "" , "video" : ""}
@@ -71,17 +64,54 @@ def capture_live_packets(network_interface):
         audioDelay.calculateJitter(pkt , ssrc["audio"])
 
 
-# def runCapture():
-#   start = time.process_time()
-#   loss = 0
-#   while True:
-#     if time.process_time() - start >= 1:
-#       start = time.process_time()
-#       if metrics.count != 0:
-#         loss = round((metrics.missed/(metrics.count+metrics.missed)),4) * 100
-#       print("Count : " , metrics.count)
-#       print("MISSED : " , metrics.missed)
-#       print("Loss : " , loss)
+def calcAudioUx(loss , jitter):
+    if loss == "":
+        return ""
+    if loss == "low":
+        return "low"
+    elif jitter == "low" :
+        return "low"
+    elif loss == "high" and jitter != "high":
+        return jitter
+    elif loss == "medium" and jitter == "medium":
+        return "medium"
+    elif loss == "medium" and jitter == "high":
+        return "medium"
+    
+    return "high"
+
+def calVideoUx(loss , fps , bw):
+    if loss == "":
+        return ""
+    
+    if loss == "low" or fps == "low" or bw == "low":
+        return "low"
+    elif loss == "high":
+        if fps == "medium" or bw == "medium":
+            return "medium"
+    elif loss == "medium":
+        return "medium"
+    
+    return "high"
+
+@app.route("/api/setApp" , methods=["POST"])
+def setApplication():
+    global conferencingApp , config , bw , loss , videoFps , videoLoss , screenLoss , audioJitter , audioDelay , jitter
+    conferencingApp = request.json["application"]
+    bw = BandWidth(config["throughput"][conferencingApp]["video"])
+    loss = Loss(config["packet_loss"][conferencingApp]["audio"])
+    videoFps = VideoFps(config["fps"][conferencingApp]["video"])
+    videoLoss = VideoLoss(config["packet_loss"][conferencingApp]["video"])
+    screenLoss = ScreenLoss()
+    audioJitter = InterArrivalJitterAudio()
+    audioDelay = DelayAudio()
+    jitter = Jitter(48000, 90000 , config["jitter"][conferencingApp]["audio"])
+    capture = threading.Thread(
+        target=capture_live_packets, args=("Ethernet",), daemon=True)
+    capture.start()
+    print("APPLICATION CONFIGURED : " , conferencingApp)
+    return {"msg" : "Application configured successfully"} , 200
+
 
 
 @app.route("/api/metrics", methods=["GET"])
@@ -90,14 +120,14 @@ def helloWorld():
     global type
     obj = {}
     obj["loss"] = loss.audio
-    obj["audioUx"] = loss.ux
+    obj["audioUx"] = calcAudioUx(loss.ux , jitter.ux)
     obj["bw"] = bw.audio
-    obj["jitter"] = jitter.audio
+    obj["jitter"] = jitter.audio * 1000
     obj["newJitter"] = audioJitter.jitter
     obj["pktRate"] = loss.pktRate
     obj["delay"] = audioDelay.delay
     obj["videoloss"] = videoLoss.loss
-    obj["videoUx"] = videoLoss.ux
+    obj["videoUx"] = calVideoUx(videoLoss.ux , videoFps.ux , bw.ux)
     obj["videofps"] = videoFps.fps
     obj["videobw"] = bw.video
     obj["videojitter"] = jitter.video
@@ -106,40 +136,13 @@ def helloWorld():
     obj["screenpktRate"] = screenLoss.pktRate
     obj["screenbw"] = bw.screen
 
-    # if type == "audio":
-    #     obj["loss"] = loss.audio
-    #     obj["bw"] = bw.audio
-    #     obj["jitter"] = jitter.audio
-    #     obj["newJitter"] = audioJitter.jitter
-    #     obj["pktRate"] = loss.pktRate
-    #     obj["delay"] = audioDelay.delay
-    # elif type == "video":
-    #     obj["videoloss"] = videoLoss.loss
-    #     obj["videobw"] = bw.video
-    #     obj["videojitter"] = jitter.video
-    #     obj["videopktRate"] = videoLoss.pktRate
     obj["count"] = count
     count += 1
     print(obj)
     return obj, 200
-# def helloWorld():
-#     global count
-#     obj = {}
-#     obj["loss"] = loss.video
-#     obj["bw"] = bw.video
-#     obj["jitter"] = jitter.video
-#     obj["count"] = count
-#     count += 1
-#     print(obj)
-#     if loss.missed["video"] != 0:
-#         print("LOSS :", loss.missed["video"])
-#     return obj, 200
 
 
 if __name__ == '__main__':
-    capture = threading.Thread(
-        target=capture_live_packets, args=("Ethernet",), daemon=True)
-    capture.start()
     # calculate = threading.Thread(target=runCapture, daemon=True)
     # calculate.start()
     print("CONFIGURATION : " , config)

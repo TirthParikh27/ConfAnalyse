@@ -9,7 +9,7 @@ packet_loss :
   teams : 
     audio : 
       - 40
-      - 70
+      - 65
     video :
       - 20
       - 35
@@ -34,4 +34,23 @@ packet_loss :
     video :
       - 20
       - 40
+
+throughput : 
+  teams :
+    video :
+      - 400
+      - 150
+
+fps :
+  teams :
+    video :
+      - 20
+      - 10
+
+jitter :
+  teams :
+    audio :
+      - 0.05
+      - 0.10
+
   

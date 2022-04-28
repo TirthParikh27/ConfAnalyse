@@ -11,32 +11,36 @@ function AudioCharts({ data }) {
         <Grid item xs={12}>
           <UxPlot type="audio" uxData={data.slice(-100)} />
         </Grid>
-        <Grid item xs={6}>
+        <Grid item xs={12}>
           <NetworkPlot
             data={data.slice(-100)}
             dataKey="loss"
-            title="Audio Packet Loss per second"
+            title="Audio Packet Loss / second (%)"
+            height={200}
           />
         </Grid>
-        <Grid item xs={6}>
+        <Grid item xs={12}>
           <NetworkPlot
             data={data.slice(-100)}
             dataKey="jitter"
-            title="Audio Jitter per second"
+            title="Audio Jitter (ms)"
+            height={200}
           />
         </Grid>
         <Grid item xs={6}>
           <NetworkPlot
             data={data.slice(-100)}
             dataKey="newJitter"
-            title="Audio Packet Inter-Arrival Jitter"
+            title="Audio Packet Inter-Arrival Jitter (ms)"
+            height={220}
           />
         </Grid>
         <Grid item xs={6}>
           <NetworkPlot
             data={data.slice(-100)}
             dataKey="delay"
-            title="Audio Receiving Delay"
+            title="Audio Receiving Delay (sec)"
+            height={220}
           />
         </Grid>
         <Grid item xs={6}>
@@ -44,6 +48,7 @@ function AudioCharts({ data }) {
             data={data.slice(-100)}
             dataKey="bw"
             title="Audio Throughput (Kbps)"
+            height={220}
           />
         </Grid>
         <Grid item xs={6}>
@@ -51,6 +56,7 @@ function AudioCharts({ data }) {
             data={data.slice(-100)}
             dataKey="pktRate"
             title="Audio Packets per second"
+            height={220}
           />
         </Grid>
       </Grid>

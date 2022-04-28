@@ -10,19 +10,21 @@ function VideoCharts({ data }) {
         <Grid item xs={12}>
           <UxPlot type="video" uxData={data.slice(-100)} />
         </Grid>
-        <Grid item xs={6}>
+        <Grid item xs={12}>
           <NetworkPlot
             data={data.slice(-100)}
             dataKey="videoloss"
-            title="Video Packet Loss per second"
+            title="Video Packet Loss / second (%)"
+            height={200}
           />
         </Grid>
 
-        <Grid item xs={6}>
+        <Grid item xs={12}>
           <NetworkPlot
             data={data.slice(-100)}
             dataKey="videofps"
             title="Video FPS"
+            height={200}
           />
         </Grid>
         {/* <Grid item xs={12}>
@@ -37,6 +39,7 @@ function VideoCharts({ data }) {
             data={data.slice(-100)}
             dataKey="videobw"
             title="Video Throughput (Kbps)"
+            height={200}
           />
         </Grid>
         <Grid item xs={6}>
@@ -44,6 +47,7 @@ function VideoCharts({ data }) {
             data={data.slice(-100)}
             dataKey="videopktRate"
             title="Video Packets per second"
+            height={200}
           />
         </Grid>
       </Grid>

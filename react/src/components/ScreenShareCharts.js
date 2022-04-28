@@ -12,6 +12,7 @@ function ScreenShareCharts({ data }) {
             data={data.slice(-100)}
             dataKey="screenloss"
             title="SCreen Sharing Packet Loss per second"
+            height={220}
           />
         </Grid>
         <Grid item xs={12}>
@@ -19,6 +20,7 @@ function ScreenShareCharts({ data }) {
             data={data.slice(-100)}
             dataKey="screenbw"
             title="Screen Sharing Throughput (Kbps)"
+            height={220}
           />
         </Grid>
         <Grid item xs={12}>
@@ -26,6 +28,7 @@ function ScreenShareCharts({ data }) {
             data={data.slice(-100)}
             dataKey="screenpktRate"
             title="Screen Sharing Packets per second"
+            height={220}
           />
         </Grid>
       </Grid>
